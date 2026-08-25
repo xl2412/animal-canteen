@@ -1,2 +1,262 @@
-:root{--orange:#ff9f68;--bg:#fff9f2;--text:#4a403a;--muted:#9a8f87;--mint:#78c6a3;--card:#fff;--line:#f1e5dc}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-rounded,"PingFang SC",system-ui,sans-serif}.shell{width:min(100%,960px);min-height:100dvh;margin:auto;padding:24px 16px calc(88px + env(safe-area-inset-bottom))}.topbar{display:flex;justify-content:space-between;align-items:center}.eyebrow{font-size:10px;letter-spacing:2px;color:var(--orange);font-weight:800}.topbar h1{font-size:21px;margin:7px 0 0}.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#ffd8c2;color:var(--orange);font-weight:800}.hello{margin:31px 0 18px}.hello p{margin:0 0 5px;color:var(--muted);font-size:14px}.hello strong{font-size:19px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px}.stats article,.device-card{background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:0 8px 24px #4a403a0d}.stats article{padding:16px}.stats span,.stats small{display:block;color:var(--muted);font-size:12px}.stats strong{display:block;font-size:27px;margin:8px 0 4px}.mint{color:var(--mint)}.device-card{margin-top:14px;padding:18px}.device-title{display:flex;gap:12px;align-items:center}.pet{width:48px;height:48px;border-radius:16px;background:#fff0e5;display:grid;place-items:center;font-size:26px}.device-title h2{font-size:15px;margin:0 0 4px}.device-title p{font-size:12px;color:var(--muted);margin:0}.online{display:inline-block;width:7px;height:7px;background:var(--mint);border-radius:50%;margin-right:4px}.progress{height:10px;background:#f6eee8;border-radius:9px;margin:20px 0 8px;overflow:hidden}.progress div{height:100%;background:var(--mint);border-radius:9px}.device-meta{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}.feed{width:100%;min-height:52px;border:0;border-radius:18px;background:var(--orange);color:#fff;font-size:16px;font-weight:800;margin-top:18px;box-shadow:0 8px 18px #ff9f6844}.feed:disabled{opacity:.7}.nav{position:fixed;bottom:0;left:0;right:0;height:72px;padding:8px 18px calc(8px + env(safe-area-inset-bottom));background:#fffffff2;border-top:1px solid var(--line);display:flex;justify-content:space-around}.nav a{color:var(--muted);font-size:20px;text-align:center;text-decoration:none}.nav span{display:block;font-size:11px;margin-top:2px}.nav .active{color:var(--orange)}@media(min-width:768px){.shell{padding-left:24px;padding-right:24px}.nav{position:static;margin-top:28px;border:0;background:transparent;max-width:420px;margin-left:auto;margin-right:auto}.nav a{display:flex;gap:8px;align-items:center}.nav span{font-size:13px}}
- .offline{display:inline-block;width:7px;height:7px;background:#b7ada6;border-radius:50%;margin-right:4px}.notice{font-size:12px;margin:10px 2px}.success{color:var(--mint)}.error{color:#d66f6f}
+:root {
+  --orange: #ff9f68;
+  --bg: #fff9f2;
+  --text: #4a403a;
+  --muted: #9a8f87;
+  --mint: #78c6a3;
+  --card: #fff;
+  --line: #f1e5dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-rounded, "PingFang SC", system-ui, sans-serif;
+}
+
+.shell {
+  width: min(100%, 960px);
+  min-height: 100dvh;
+  margin: auto;
+  padding: 24px 16px calc(88px + env(safe-area-inset-bottom));
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.eyebrow {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.topbar h1 {
+  font-size: 21px;
+  margin: 7px 0 0;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffd8c2;
+  color: var(--orange);
+  font-weight: 800;
+}
+
+.hello {
+  margin: 31px 0 18px;
+}
+
+.hello p {
+  margin: 0 0 5px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.hello strong {
+  font-size: 19px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.stats article,
+.device-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: 0 8px 24px #4a403a0d;
+}
+
+.stats article {
+  padding: 16px;
+}
+
+.stats span,
+.stats small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.stats strong {
+  display: block;
+  font-size: 27px;
+  margin: 8px 0 4px;
+}
+
+.mint {
+  color: var(--mint);
+}
+
+.device-card {
+  margin-top: 14px;
+  padding: 18px;
+}
+
+.device-title {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.pet {
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #fff0e5;
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+}
+
+.device-title h2 {
+  font-size: 15px;
+  margin: 0 0 4px;
+}
+
+.device-title p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+.online,
+.offline {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.online {
+  background: var(--mint);
+}
+
+.offline {
+  background: #b7ada6;
+}
+
+.progress {
+  height: 10px;
+  background: #f6eee8;
+  border-radius: 9px;
+  margin: 20px 0 8px;
+  overflow: hidden;
+}
+
+.progress div {
+  height: 100%;
+  background: var(--mint);
+  border-radius: 9px;
+}
+
+.device-meta {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.feed {
+  width: 100%;
+  min-height: 52px;
+  border: 0;
+  border-radius: 18px;
+  background: var(--orange);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 18px;
+  box-shadow: 0 8px 18px #ff9f6844;
+}
+
+.feed:disabled {
+  opacity: 0.7;
+}
+
+.notice {
+  font-size: 12px;
+  margin: 10px 2px;
+}
+
+.success {
+  color: var(--mint);
+}
+
+.error {
+  color: #d66f6f;
+}
+
+.nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 72px;
+  padding: 8px 18px calc(8px + env(safe-area-inset-bottom));
+  background: #fffffff2;
+  border-top: 1px solid var(--line);
+  display: flex;
+  justify-content: space-around;
+}
+
+.nav a {
+  color: var(--muted);
+  font-size: 20px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.nav span {
+  display: block;
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.nav .active {
+  color: var(--orange);
+}
+
+@media (min-width: 768px) {
+  .shell {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .nav {
+    position: static;
+    margin-top: 28px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 0;
+    background: transparent;
+    max-width: 420px;
+  }
+
+  .nav a {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .nav span {
+    font-size: 13px;
+  }
+}

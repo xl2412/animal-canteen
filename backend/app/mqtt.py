@@ -1,6 +1,7 @@
 import json
 from typing import Any
 
+
 class MQTTService:
     def __init__(self, prefix: str):
         self.prefix = prefix
@@ -24,4 +25,6 @@ class MQTTService:
     async def publish_command(self, device_id: str, payload: dict[str, Any]) -> None:
         if self.client is None:
             return
-        await self.client.publish(self.command_topic(device_id), json.dumps(payload), qos=1)
+        await self.client.publish(
+            self.command_topic(device_id), json.dumps(payload), qos=1
+        )

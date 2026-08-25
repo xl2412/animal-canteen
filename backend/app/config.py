@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+
 class Settings(BaseSettings):
     app_env: str = "development"
     mqtt_host: str = "localhost"
@@ -10,5 +11,6 @@ class Settings(BaseSettings):
     jwt_secret: str = "change-me"
     frontend_origin: str = "http://localhost:3000"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 
 settings = Settings()
