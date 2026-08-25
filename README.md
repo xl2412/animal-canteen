@@ -22,9 +22,9 @@ cd frontend && pnpm install && pnpm dev
 
 ## 当前实现与技术方案的差异
 
-已落地：移动端优先仪表盘、375px 基准布局、底部导航、安全区域适配、离线/加载按钮基础状态、FastAPI 健康检查、设备列表/详情、份量校验、唯一 requestId、MQTT command Topic 和喂食记录接口。
+已落地：移动端优先仪表盘、375px 基准布局、底部导航、安全区域适配、H5 调用 FastAPI 加载设备、提交喂食命令、成功/失败反馈、FastAPI CORS、健康检查、设备列表/详情、份量校验、唯一 requestId、MQTT command Topic 和喂食记录接口。
 
-待补齐：JWT 登录与设备归属鉴权、PostgreSQL/Redis 持久化、MQTT Consumer（state/result/availability）、WebSocket 实时推送、真实设备接入、记录筛选与设置页。当前后端设备和记录使用内存数据，仅用于端到端联调骨架。
+待补齐：JWT 登录与设备归属鉴权、PostgreSQL/Redis 持久化、MQTT Consumer（state/result/availability）、WebSocket 实时推送、真实设备接入、记录筛选与设置页。当前后端设备和记录使用内存数据，命令接口可被 H5 调用，但 MQTT 尚未连接真实 Broker。
 
 ### 与文档验收标准对应关系
 

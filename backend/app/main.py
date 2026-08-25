@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 from uuid import uuid4
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from .config import settings
 from .mqtt import MQTTService
@@ -19,7 +20,7 @@ class Device(BaseModel):
 
 
 devices: dict[str, Device] = {
-    "feeder-demo": Device(deviceId="feeder-demo", name="小橘 · 智能喂食器", online=False)
+    "feeder-demo": Device(deviceId="feeder-demo", name="小橘 · 智能喂食器", online=True, state={"foodPercent": 68, "todayFeedCount": 3, "lastFedAt": "10:30"})
 }
 records: list[dict] = []
 
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="动物食堂 API", version="0.1.0", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["*"])
 
 @app.get("/health")
 async def health():

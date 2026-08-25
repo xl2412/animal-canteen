@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     mqtt_password: str | None = None
     mqtt_topic_prefix: str = "animal-canteen/device"
     jwt_secret: str = "change-me"
+    frontend_origin: str = "http://localhost:3000"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()
