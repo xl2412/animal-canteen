@@ -60,7 +60,7 @@ class RecordModel(Base):
     device: Mapped[DeviceModel] = relationship(back_populates="records")
 
 
-engine = create_async_engine(settings.database_url, pool_pre_ping=True)
+engine = create_async_engine(settings.async_database_url, pool_pre_ping=True)
 Session = async_sessionmaker(engine, expire_on_commit=False)
 mqtt = MQTTService(settings.mqtt_topic_prefix)
 

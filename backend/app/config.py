@@ -1,6 +1,14 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+def async_database_url(value: str) -> str:
+    if value.startswith("postgres://"):
+        return value.replace("postgres://", "postgresql+asyncpg://", 1)
+    if value.startswith("postgresql://"):
+        return value.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return value
+
+
 class Settings(BaseSettings):
     app_env: str = "development"
     mqtt_host: str = "localhost"
@@ -12,6 +20,10 @@ class Settings(BaseSettings):
     frontend_origin: str = "http://localhost:3000"
     database_url: str = "postgresql+asyncpg://animal:animal_dev@localhost:5432/animal_canteen"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    @property
+    def async_database_url(self) -> str:
+        return async_database_url(self.database_url)
 
 
 settings = Settings()
