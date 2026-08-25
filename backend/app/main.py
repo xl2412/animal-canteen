@@ -29,7 +29,7 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="动物食堂 API", version="0.1.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin], allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=[settings.frontend_origin, "http://localhost:3000", "http://127.0.0.1:3000"], allow_credentials=True, allow_methods=["GET", "POST"], allow_headers=["*"])
 
 @app.get("/health")
 async def health():

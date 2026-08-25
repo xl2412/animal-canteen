@@ -13,9 +13,16 @@ ESP8266 智能喂食器与移动端 H5 管理控制台。
 
 ```bash
 docker compose up -d
-cd backend && python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt && uvicorn app.main:app --reload --port 8000
-cd frontend && pnpm install && pnpm dev
+
+# 终端 1：启动 FastAPI
+cd backend
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload --port 8000
+
+# 终端 2：启动 H5
+cd frontend
+pnpm install && pnpm dev
 ```
 
 访问 http://localhost:3000，API 文档位于 http://localhost:8000/docs。
