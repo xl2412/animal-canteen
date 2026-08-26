@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     mqtt_topic_prefix: str = "animal-canteen/device"
     jwt_secret: str = "change-me"
     frontend_origin: str = "http://localhost:3000"
+    frontend_origins: str = ""
     database_url: str = "postgresql+asyncpg://animal:animal_dev@localhost:5432/animal_canteen"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

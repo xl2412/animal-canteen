@@ -134,9 +134,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="动物食堂 API", version="0.2.0", lifespan=lifespan)
+configured_origins = [origin.strip() for origin in settings.frontend_origins.split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
+    allow_origins=configured_origins + [
         settings.frontend_origin,
         "http://localhost:3000",
         "http://127.0.0.1:3000",
