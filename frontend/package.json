@@ -1,6 +1,7 @@
 {
   "name": "animal-canteen-web",
   "private": true,
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -21,10 +22,5 @@
     "@types/react-dom": "^19",
     "prettier": "^3.9.6",
     "typescript": "^5.7"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp"
-    ]
   }
 }
