@@ -65,7 +65,7 @@ void handleOptions() { cors(); server.send(204); }
 
 void handleInfo() {
   cors();
-  String body = "{\"deviceId\":\"" + jsonEscape(deviceId) + "\",\"model\":\"ESP-12F\",\"mac\":\"" + WiFi.macAddress() + "\",\"firmwareVersion\":\"0.2.0\",\"capabilities\":[\"io\",\"wifi_provisioning\"],\"pairingRequired\":false}";
+  String body = "{\"deviceId\":\"" + jsonEscape(deviceId) + "\",\"model\":\"ESP-12F\",\"mac\":\"" + WiFi.macAddress() + "\",\"firmwareVersion\":\"0.2.0\",\"capabilities\":[\"io\",\"wifi_provisioning\"],\"pairingRequired\":true}";
   server.send(200, "application/json", body);
 }
 
@@ -81,6 +81,10 @@ void handlePair() {
 
 void handleWifi() {
   cors();
+  if (!paired) {
+    server.send(403, "application/json", "{\"error\":\"pairing_required\"}");
+    return;
+  }
   if (!server.hasArg("ssid") || !server.hasArg("password")) {
     server.send(400, "application/json", "{\"error\":\"missing_fields\"}");
     return;
