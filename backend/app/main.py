@@ -1,13 +1,14 @@
 from contextlib import asynccontextmanager
-from datetime import datetime, time, timezone
+from datetime import datetime, timedelta, time, timezone
+import secrets
 from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, select
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, JSON, String, text, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship, selectinload
 
 from .config import settings
 from .mqtt import MQTTService
@@ -24,10 +25,25 @@ class DeviceModel(Base):
     online: Mapped[bool] = mapped_column(Boolean, default=False)
     food_percent: Mapped[int] = mapped_column(Integer, default=0)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    model: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    mac_address: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    firmware_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    capabilities: Mapped[list[str]] = mapped_column(JSON, default=list)
+    pairing_status: Mapped[str] = mapped_column(String(30), default="unpaired")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     pet: Mapped["PetModel | None"] = relationship(back_populates="device", cascade="all, delete-orphan", uselist=False, lazy="selectin")
     schedules: Mapped[list["ScheduleModel"]] = relationship(back_populates="device", cascade="all, delete-orphan", lazy="selectin")
     records: Mapped[list["RecordModel"]] = relationship(back_populates="device", cascade="all, delete-orphan", lazy="selectin")
+
+
+class ProvisioningSessionModel(Base):
+    __tablename__ = "provisioning_sessions"
+    id: Mapped[str] = mapped_column(String(80), primary_key=True)
+    token: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    device_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    status: Mapped[str] = mapped_column(String(30), default="created")
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 
 class PetModel(Base):
@@ -62,7 +78,7 @@ class RecordModel(Base):
 
 engine = create_async_engine(settings.async_database_url, pool_pre_ping=True)
 Session = async_sessionmaker(engine, expire_on_commit=False)
-mqtt = MQTTService(settings.mqtt_topic_prefix)
+mqtt = MQTTService(settings.mqtt_topic_prefix, settings.mqtt_host, settings.mqtt_port, settings.mqtt_username, settings.mqtt_password)
 
 
 class PetInput(BaseModel):
@@ -74,6 +90,23 @@ class BindInput(BaseModel):
     deviceId: str = Field(min_length=1, max_length=100)
     nickname: str = Field(min_length=1, max_length=120)
     pet: PetInput
+
+
+class HardwareInfo(BaseModel):
+    deviceId: str = Field(min_length=1, max_length=100)
+    model: str | None = Field(default=None, max_length=100)
+    mac: str | None = Field(default=None, max_length=30)
+    firmwareVersion: str | None = Field(default=None, max_length=50)
+    capabilities: list[str] = Field(default_factory=list, max_length=30)
+
+
+class ProvisioningSessionInput(BaseModel):
+    deviceId: str | None = Field(default=None, max_length=100)
+
+
+class ClaimInput(BindInput):
+    provisioningSessionId: str = Field(min_length=1, max_length=80)
+    provisioningToken: str = Field(min_length=1, max_length=120)
 
 
 class DeviceUpdate(BaseModel):
@@ -107,6 +140,11 @@ def serialize_device(device: DeviceModel) -> dict:
         "online": device.online,
         "foodPercent": device.food_percent,
         "lastSeenAt": device.last_seen_at,
+        "model": device.model,
+        "mac": device.mac_address,
+        "firmwareVersion": device.firmware_version,
+        "capabilities": device.capabilities or [],
+        "pairingStatus": device.pairing_status,
         "pet": {"name": device.pet.name, "avatar": device.pet.avatar} if device.pet else None,
     }
 
@@ -119,17 +157,63 @@ async def get_device(session: AsyncSession, device_id: str) -> DeviceModel:
     return device
 
 
+async def handle_mqtt_message(topic: str, payload: dict) -> None:
+    parts = topic.strip("/").split("/")
+    if len(parts) < 4 or parts[:2] != settings.mqtt_topic_prefix.strip("/").split("/"):
+        return
+    device_id, suffix = parts[-2], parts[-1]
+    message_device_id = str(payload.get("deviceId", device_id))
+    if message_device_id != device_id:
+        return
+    async with Session.begin() as session:
+        device = await session.get(DeviceModel, device_id)
+        if not device:
+            return
+        now = datetime.now(timezone.utc)
+        device.last_seen_at = now
+        if suffix == "availability":
+            device.online = payload.get("status") == "online"
+            device.model = payload.get("model", device.model)
+            device.mac_address = payload.get("mac", device.mac_address)
+            device.firmware_version = payload.get("firmwareVersion", device.firmware_version)
+            device.capabilities = payload.get("capabilities", device.capabilities or [])
+        elif suffix == "state":
+            device.online = True
+            if isinstance(payload.get("foodPercent"), int):
+                device.food_percent = payload["foodPercent"]
+        elif suffix == "result":
+            request_id = payload.get("requestId")
+            if request_id:
+                record_result = await session.execute(
+                    select(RecordModel).where(RecordModel.request_id == str(request_id))
+                )
+                record = record_result.scalar_one_or_none()
+                if record:
+                    record.status = "success" if payload.get("status") == "success" or payload.get("success") is True else "failed"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+        # Keep existing local/Railway databases compatible until Alembic migrations are introduced.
+        for statement in (
+            "ALTER TABLE devices ADD COLUMN IF NOT EXISTS model VARCHAR(100)",
+            "ALTER TABLE devices ADD COLUMN IF NOT EXISTS mac_address VARCHAR(30)",
+            "ALTER TABLE devices ADD COLUMN IF NOT EXISTS firmware_version VARCHAR(50)",
+            "ALTER TABLE devices ADD COLUMN IF NOT EXISTS capabilities JSON DEFAULT '[]'::json",
+            "ALTER TABLE devices ADD COLUMN IF NOT EXISTS pairing_status VARCHAR(30) DEFAULT 'unpaired'",
+        ):
+            await connection.execute(text(statement))
     async with Session.begin() as session:
         demo = await session.get(DeviceModel, "feeder-demo")
         if not demo:
             demo = DeviceModel(device_id="feeder-demo", nickname="小橘 · 智能喂食器", online=True, food_percent=68)
             session.add(demo)
             session.add(PetModel(device_id="feeder-demo", name="小橘", avatar="🐱"))
+    await mqtt.start_consumer(handle_mqtt_message)
     yield
+    await mqtt.stop_consumer()
     await engine.dispose()
 
 
@@ -141,6 +225,7 @@ app.add_middleware(
         settings.frontend_origin,
         "http://localhost:3000",
         "http://127.0.0.1:3000",
+        "http://192.168.31.254:3000",
         "https://animal-canteen-frontend-production.up.railway.app",
     ],
     allow_credentials=True,
@@ -172,6 +257,68 @@ async def bind_device(payload: BindInput):
             device.pet = PetModel(name=payload.pet.name, avatar=payload.pet.avatar)
         await session.flush()
         return serialize_device(device)
+
+
+@app.post("/api/devices/provisioning/session")
+async def create_provisioning_session(payload: ProvisioningSessionInput):
+    now = datetime.now(timezone.utc)
+    session_id = f"prov_{secrets.token_urlsafe(18)}"
+    token = secrets.token_urlsafe(32)
+    async with Session.begin() as session:
+        session.add(ProvisioningSessionModel(
+            id=session_id,
+            token=token,
+            device_id=payload.deviceId,
+            expires_at=now + timedelta(minutes=10),
+        ))
+    return {"sessionId": session_id, "token": token, "expiresAt": now + timedelta(minutes=10)}
+
+
+@app.post("/api/devices/register")
+async def register_device(payload: HardwareInfo):
+    async with Session.begin() as session:
+        device = await session.get(DeviceModel, payload.deviceId)
+        if not device:
+            device = DeviceModel(device_id=payload.deviceId)
+            session.add(device)
+        device.model = payload.model
+        device.mac_address = payload.mac
+        device.firmware_version = payload.firmwareVersion
+        device.capabilities = payload.capabilities
+        device.pairing_status = "discovered"
+        await session.flush()
+        result = await session.execute(
+            select(DeviceModel).options(selectinload(DeviceModel.pet)).where(DeviceModel.device_id == payload.deviceId)
+        )
+        return serialize_device(result.scalar_one())
+
+
+@app.post("/api/devices/{device_id}/claim")
+async def claim_device(device_id: str, payload: ClaimInput):
+    now = datetime.now(timezone.utc)
+    async with Session.begin() as session:
+        provisioning = await session.get(ProvisioningSessionModel, payload.provisioningSessionId)
+        if not provisioning or provisioning.token != payload.provisioningToken or provisioning.expires_at < now:
+            raise HTTPException(status_code=401, detail="配网会话不存在或已过期")
+        if provisioning.device_id and provisioning.device_id != device_id:
+            raise HTTPException(status_code=409, detail="设备与配网会话不匹配")
+        device = await get_device(session, device_id)
+        device.nickname = payload.nickname
+        device.pairing_status = "claimed"
+        provisioning.device_id = device_id
+        provisioning.status = "claimed"
+        if device.pet:
+            device.pet.name, device.pet.avatar = payload.pet.name, payload.pet.avatar
+        else:
+            device.pet = PetModel(name=payload.pet.name, avatar=payload.pet.avatar)
+        return serialize_device(device)
+
+
+@app.get("/api/devices/{device_id}/provisioning-status")
+async def provisioning_status(device_id: str):
+    async with Session() as session:
+        device = await get_device(session, device_id)
+        return {"deviceId": device_id, "status": "connected" if device.online else "waiting_for_cloud", "online": device.online}
 
 
 @app.get("/api/devices/{device_id}")
@@ -231,7 +378,15 @@ async def send_command(device_id: str, command: FeedCommand):
         if not device.online:
             raise HTTPException(status_code=409, detail="设备当前离线")
         request_id = f"req_{uuid4().hex}"
-        await mqtt.publish_command(device_id, {"requestId": request_id, "action": "feed", "grams": command.grams})
+        await mqtt.publish_command(
+            device_id,
+            {
+                "deviceId": device_id,
+                "requestId": request_id,
+                "action": "feed",
+                "grams": command.grams,
+            },
+        )
         session.add(RecordModel(device_id=device_id, grams=command.grams, request_id=request_id, status="accepted"))
         return {"requestId": request_id, "status": "accepted", "message": "命令已发送，等待设备结果"}
 

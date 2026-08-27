@@ -53,7 +53,22 @@ export default function DeviceDetailPage() {
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.detail);
-      setMessage(`已提交喂食命令 · ${d.requestId}`);
+      setMessage(`命令已发送，等待设备结果 · ${d.requestId}`);
+      for (let attempt = 0; attempt < 15; attempt += 1) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        const recordsResponse = await fetch(`${API}/api/devices/${deviceId}/records`);
+        if (!recordsResponse.ok) continue;
+        const recordsData = await recordsResponse.json();
+        const record = recordsData.items?.find((item: { requestId: string; status: string }) => item.requestId === d.requestId);
+        if (record?.status === 'success') {
+          setMessage(`喂食完成 · ${d.requestId}`);
+          return;
+        }
+        if (record?.status === 'failed') {
+          throw new Error('设备执行喂食失败');
+        }
+      }
+      setMessage(`命令已发送，暂未收到设备结果 · ${d.requestId}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : '喂食失败');
     } finally {
