@@ -55,6 +55,15 @@ String jsonEscape(const String& value) {
   return output;
 }
 
+String jsonStringValue(const String& json, const String& key) {
+  String marker = "\"" + key + "\":\"";
+  int start = json.indexOf(marker);
+  if (start < 0) return "";
+  start += marker.length();
+  int end = json.indexOf('"', start);
+  return end < 0 ? "" : json.substring(start, end);
+}
+
 void cors() {
   server.sendHeader("Access-Control-Allow-Origin", "*");
   server.sendHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
@@ -106,7 +115,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   String message;
   for (unsigned int i = 0; i < length; i++) message += (char)payload[i];
   if (message.indexOf("\"action\":\"feed\"") >= 0) {
-    String result = "{\"deviceId\":\"" + deviceId + "\",\"status\":\"success\",\"message\":\"feed received\"}";
+    String requestId = jsonStringValue(message, "requestId");
+    String result = "{\"deviceId\":\"" + deviceId + "\",\"requestId\":\"" + jsonEscape(requestId) + "\",\"status\":\"success\",\"message\":\"feed received\"}";
     mqtt.publish(topicResult.c_str(), result.c_str());
   }
 }
