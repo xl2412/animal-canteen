@@ -4,7 +4,7 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import '../../styles.css';
 
-const CLOUD_API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const CLOUD_API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://animal-canteen-backend-production.up.railway.app';
 const avatars = ['🐱', '🐶', '🐰', '🐹'];
 type Hardware = { deviceId: string; model?: string; mac?: string; firmwareVersion?: string; capabilities?: string[]; pairingRequired?: boolean };
 

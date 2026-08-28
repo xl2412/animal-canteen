@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import './styles.css';
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://animal-canteen-backend-production.up.railway.app';
 type Device = { deviceId: string; nickname: string; online: boolean; foodPercent: number; pet?: { name: string; avatar: string } };
 export default function Home() {
   const [devices, setDevices] = useState<Device[]>([]);

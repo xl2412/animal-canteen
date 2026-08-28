@@ -227,6 +227,7 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://192.168.31.254:3000",
         "https://animal-canteen-frontend-production.up.railway.app",
+        "https://animal-canteen.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE"],

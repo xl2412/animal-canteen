@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 
 import '../../styles.css';
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'http://localhost:8000';
+const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://animal-canteen-backend-production.up.railway.app';
 type Schedule = { id: number; time: string; grams: number; enabled: boolean };
 type Device = {
   deviceId: string;

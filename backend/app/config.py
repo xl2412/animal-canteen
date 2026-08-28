@@ -11,7 +11,7 @@ def async_database_url(value: str) -> str:
 
 class Settings(BaseSettings):
     app_env: str = "development"
-    mqtt_host: str = "localhost"
+    mqtt_host: str = "broker.emqx.io"
     mqtt_port: int = 1883
     mqtt_username: str | None = None
     mqtt_password: str | None = None
