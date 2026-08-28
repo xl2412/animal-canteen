@@ -110,6 +110,27 @@ body {
   text-align: center;
   box-shadow: 0 8px 24px #4a403a0d;
 }
+.feeding-card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 20px 18px; box-shadow: 0 8px 24px #4a403a0d; }
+.section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.section-heading h2 { margin: 4px 0 0; font-size: 18px; }
+.section-kicker { color: var(--orange); font-size: 10px; letter-spacing: 1.5px; font-weight: 800; }
+.plan-badge { color: #4f9d7b; background: #eaf8f0; border-radius: 20px; padding: 6px 10px; font-size: 11px; font-weight: 700; }
+.feeding-card > .muted { margin: 8px 0 18px; }
+.feeding-card .schedule-form { margin-bottom: 12px; }
+.schedule-form label { display: block; color: var(--muted); font-size: 12px; font-weight: 700; }
+.schedule-form label input { margin-top: 6px; }
+.schedule-list { border-top: 1px solid var(--line); }
+.feeding-card .feed { margin-top: 14px; }
+.feed { width: 100%; min-height: 52px; border: 0; border-radius: 15px; background: var(--orange); color: #fff; font-size: 15px; font-weight: 800; box-shadow: 0 8px 18px #ff9f6838; }
+.feed:disabled { opacity: .55; box-shadow: none; }
+.history-card { margin-top: 16px; }
+.history-card .section-heading { margin-bottom: 12px; }
+.history-row { display: flex; align-items: center; gap: 11px; border-top: 1px solid var(--line); padding: 13px 0; }
+.history-icon { width: 34px; height: 34px; display: grid; place-items: center; background: #fff3e9; border-radius: 11px; }
+.history-row strong, .history-row small { display: block; }
+.history-row small { color: var(--muted); font-size: 12px; margin-top: 3px; }
+.status { margin-left: auto; color: #4f9d7b; font-size: 12px; font-weight: 700; }
+.status.failed { color: #d66f6f; }
 .empty-icon {
   font-size: 42px;
 }
@@ -247,6 +268,11 @@ body {
   border: 0;
   background: transparent;
   color: #d66f6f;
+}
+
+@media (max-width: 520px) {
+  .schedule-form { grid-template-columns: 1fr 1fr; }
+  .schedule-form .small-button { grid-column: 1 / -1; }
 }
 
 .stats article {

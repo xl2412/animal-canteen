@@ -7,6 +7,7 @@ import '../../styles.css';
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://animal-canteen-backend-production.up.railway.app';
 type Schedule = { id: number; time: string; grams: number; enabled: boolean };
+type FeedingRecord = { id: number; requestId: string; grams: number; status: string; createdAt: string };
 type Device = {
   deviceId: string;
   nickname: string;
@@ -20,6 +21,7 @@ export default function DeviceDetailPage() {
   const { deviceId } = useParams<{ deviceId: string }>();
   const router = useRouter();
   const [device, setDevice] = useState<Device | null>(null);
+  const [records, setRecords] = useState<FeedingRecord[]>([]);
   const [nickname, setNickname] = useState('');
   const [petName, setPetName] = useState('');
   const [avatar, setAvatar] = useState('🐱');
@@ -29,8 +31,13 @@ export default function DeviceDetailPage() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const load = () =>
-    fetch(`${API}/api/devices/${deviceId}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error('设备加载失败'))))
+    Promise.all([fetch(`${API}/api/devices/${deviceId}`), fetch(`${API}/api/devices/${deviceId}/records`)] )
+      .then(async ([deviceResponse, recordsResponse]) => {
+        if (!deviceResponse.ok) throw new Error('设备加载失败');
+        const data = (await deviceResponse.json()) as Device;
+        if (recordsResponse.ok) setRecords(((await recordsResponse.json()) as { items: FeedingRecord[] }).items ?? []);
+        return data;
+      })
       .then((data: Device) => {
         setDevice(data);
         setNickname(data.nickname);
@@ -62,6 +69,7 @@ export default function DeviceDetailPage() {
         const record = recordsData.items?.find((item: { requestId: string; status: string }) => item.requestId === d.requestId);
         if (record?.status === 'success') {
           setMessage(`喂食完成 · ${d.requestId}`);
+          load();
           return;
         }
         if (record?.status === 'failed') {
@@ -133,9 +141,30 @@ export default function DeviceDetailPage() {
           <div style={{ width: `${device.foodPercent}%` }} />
         </div>
       </section>
-      <button className="feed" onClick={feed} disabled={busy || !device.online}>
-        {busy ? '正在准备一餐...' : device.online ? '手动放粮 · 20g' : '设备离线'}
-      </button>
+      <section className="feeding-card">
+        <div className="section-heading">
+          <div><span className="section-kicker">FEEDING PLAN</span><h2>喂食安排</h2></div>
+          <span className="plan-badge">每日自动</span>
+        </div>
+        <p className="muted">设置固定时间，让小伙伴按时吃饭</p>
+        <form className="schedule-form" onSubmit={addSchedule}>
+          <label>时间<input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} /></label>
+          <label>分量（克）<input type="number" min="1" max="500" value={grams} onChange={(e) => setGrams(e.target.value)} /></label>
+          <button className="small-button">添加时间</button>
+        </form>
+        <div className="schedule-list">
+          {device.schedules.length === 0 && <p className="muted">还没有设置自动喂食时间</p>}
+          {device.schedules.map((item) => (
+            <div className="schedule-row" key={item.id}>
+              <strong>{item.time}</strong><span>{item.grams}g · 每天</span>
+              <button onClick={() => removeSchedule(item.id)}>删除</button>
+            </div>
+          ))}
+        </div>
+        <button className="feed" onClick={feed} disabled={busy || !device.online}>
+          {busy ? '正在准备一餐...' : device.online ? '立即投喂 · 20g' : '设备离线，暂不可投喂'}
+        </button>
+      </section>
       <section className="form-card">
         <h2>设备与宠物信息</h2>
         <label>
@@ -154,21 +183,10 @@ export default function DeviceDetailPage() {
           保存信息
         </button>
       </section>
-      <section className="form-card">
-        <h2>每日放粮时间</h2>
-        <p className="muted">当前仅保存配置，暂不自动执行。</p>
-        <form className="schedule-form" onSubmit={addSchedule}>
-          <input type="time" value={scheduleTime} onChange={(e) => setScheduleTime(e.target.value)} />
-          <input type="number" min="1" max="500" value={grams} onChange={(e) => setGrams(e.target.value)} />
-          <button className="small-button">添加</button>
-        </form>
-        {device.schedules.length === 0 && <p className="muted">还没有设置放粮时间</p>}
-        {device.schedules.map((item) => (
-          <div className="schedule-row" key={item.id}>
-            <strong>{item.time}</strong>
-            <span>{item.grams}g · 已启用</span>
-            <button onClick={() => removeSchedule(item.id)}>删除</button>
-          </div>
+      <section className="form-card history-card">
+        <div className="section-heading"><div><span className="section-kicker">ACTIVITY</span><h2>投喂历史</h2></div><span className="muted">最近记录</span></div>
+        {records.length === 0 ? <p className="muted">还没有投喂记录</p> : records.slice(0, 8).map((record) => (
+          <div className="history-row" key={record.id}><span className="history-icon">🍽️</span><div><strong>{record.grams}g</strong><small>{new Date(record.createdAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</small></div><span className={`status ${record.status}`}>{record.status === 'success' ? '已完成' : record.status === 'failed' ? '失败' : '处理中'}</span></div>
         ))}
       </section>
       {message && <p className="notice success">{message}</p>}
